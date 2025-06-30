@@ -34,7 +34,7 @@ jobs:
 
     - name: 🚀 Initialize EAS project
       working-directory: ./AIPoweredPocket
-      run: eas init --id 802b4a29-263b-4309-9483-1a82b20586be --non-interactive
+      run: eas init --id 802b4a29-263b-4309-9483-1a82b20586be --non-interactive --force
 
     - name: 🏗 Create EAS config
       working-directory: ./AIPoweredPocket
