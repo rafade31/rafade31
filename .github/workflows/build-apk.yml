@@ -72,13 +72,9 @@ jobs:
         }
         EOF
 
-    - name: 🔐 Setup credentials
-      working-directory: ./AIPoweredPocket
-      run: eas credentials -p android --clear-cache
-
     - name: 📱 Build APK
       working-directory: ./AIPoweredPocket
-      run: eas build --platform android --profile development --non-interactive --no-wait
+      run: eas build --platform android --profile development --non-interactive --no-wait --clear-cache
 
     - name: ✅ Build Complete
       run: |
