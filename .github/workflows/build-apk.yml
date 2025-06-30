@@ -32,6 +32,10 @@ jobs:
       working-directory: ./AIPoweredPocket
       run: npm ci
 
+    - name: 🗂️ Remove conflicting android directory
+      working-directory: ./AIPoweredPocket
+      run: rm -rf android
+
     - name: 🚀 Initialize EAS project
       working-directory: ./AIPoweredPocket
       run: eas init --id 802b4a29-263b-4309-9483-1a82b20586be --non-interactive --force
@@ -42,7 +46,8 @@ jobs:
         cat > eas.json << EOF
         {
           "cli": {
-            "version": ">= 2.0.0"
+            "version": ">= 2.0.0",
+            "appVersionSource": "remote"
           },
           "build": {
             "development": {
