@@ -32,6 +32,10 @@ jobs:
       working-directory: ./AIPoweredPocket
       run: npm ci
 
+    - name: 📱 Install expo-dev-client
+      working-directory: ./AIPoweredPocket
+      run: npx expo install expo-dev-client
+
     - name: 🗂️ Remove conflicting android directory
       working-directory: ./AIPoweredPocket
       run: rm -rf android
