@@ -81,7 +81,7 @@ jobs:
 
     - name: 📱 Build APK
       working-directory: ./AIPoweredPocket
-      run: eas build --platform android --profile development --non-interactive --no-wait --clear-cache
+      run: eas build --platform android --profile preview --non-interactive --no-wait --clear-cache
 
     - name: ✅ Build Complete
       run: |
