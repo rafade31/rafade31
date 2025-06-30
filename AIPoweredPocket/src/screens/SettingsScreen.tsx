@@ -77,7 +77,7 @@ const SettingsScreen = () => {
   };
 
   const handleThemeToggle = () => {
-    const newTheme = settings.theme === 'light' ? 'dark' : 'light';
+    const newTheme: "light" | "dark" = settings.theme === "light" ? "dark" : "light";
     const updatedSettings = { ...settings, theme: newTheme };
     saveSettings(updatedSettings);
   };
