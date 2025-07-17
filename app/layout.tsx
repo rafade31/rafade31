@@ -16,6 +16,13 @@ export const metadata: Metadata = {
   keywords: ['AI', 'coding', 'assistant', 'blackbox', 'code generation', 'developer tools'],
   authors: [{ name: 'rafade31' }],
   viewport: 'width=device-width, initial-scale=1',
+  manifest: '/manifest.json',
+  themeColor: '#0ea5e9',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'BlackBox AI'
+  }
 }
 
 export default function RootLayout({
