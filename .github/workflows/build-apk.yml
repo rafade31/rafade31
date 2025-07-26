@@ -1,0 +1,91 @@
+name: Build APK with EAS
+
+on:
+  push:
+    branches: [ main, mentat-1 ]
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  build:
+    name: Build APK
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 🏗 Setup repo
+      uses: actions/checkout@v3
+
+    - name: 🏗 Setup Node
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18.x
+        cache: npm
+        cache-dependency-path: AIPoweredPocket/package-lock.json
+
+    - name: 🏗 Setup EAS
+      uses: expo/expo-github-action@v8
+      with:
+        expo-version: latest
+        eas-version: latest
+        token: ${{ secrets.EXPO_TOKEN }}
+
+    - name: 📦 Install dependencies
+      working-directory: ./AIPoweredPocket
+      run: npm ci
+
+    - name: 📱 Install expo-dev-client
+      working-directory: ./AIPoweredPocket
+      run: npx expo install expo-dev-client
+
+    - name: 🗂️ Remove conflicting android directory
+      working-directory: ./AIPoweredPocket
+      run: rm -rf android
+
+    - name: 🚀 Initialize EAS project
+      working-directory: ./AIPoweredPocket
+      run: eas init --id 802b4a29-263b-4309-9483-1a82b20586be --non-interactive --force
+
+    - name: 🏗 Create EAS config
+      working-directory: ./AIPoweredPocket
+      run: |
+        cat > eas.json << EOF
+        {
+          "cli": {
+            "version": ">= 2.0.0",
+            "appVersionSource": "remote"
+          },
+          "build": {
+            "development": {
+              "developmentClient": true,
+              "distribution": "internal",
+              "android": {
+                "buildType": "apk",
+                "credentialsSource": "remote"
+              }
+            },
+            "preview": {
+              "distribution": "internal",
+              "android": {
+                "buildType": "apk",
+                "credentialsSource": "remote"
+              }
+            },
+            "production": {
+              "android": {
+                "buildType": "apk",
+                "credentialsSource": "remote"
+              }
+            }
+          }
+        }
+        EOF
+
+    - name: 📱 Build APK
+      working-directory: ./AIPoweredPocket
+      run: eas build --platform android --profile preview --non-interactive --clear-cache
+
+    - name: ✅ Build Complete
+      run: |
+        echo "🎉 APK build started successfully!"
+        echo "📱 Check your Expo dashboard at: https://expo.dev/"
+        echo "⏳ Build will take 5-15 minutes to complete"
+        echo "📥 Download link will appear on your Expo dashboard when ready"
