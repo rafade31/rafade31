@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitor IA — ORAN (Dashboard Ventes & Stock)</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+:root{--b0:#08080a;--b1:#0e0e11;--b2:#141418;--b3:#1a1a1f;--brd:#222228;--br2:#2e2e35;--t:#e8e8ec;--t2:#9898a4;--t3:#6a6a78;--ac:#4f8cff;--a2:#3a6fd8;--gn:#22c55e;--gBg:rgba(34,197,94,.1);--wn:#f59e0b;--wBg:rgba(245,158,11,.1);--rd:#ef4444;--rBg:rgba(239,68,68,.1);--in:#06b6d4;--iBg:rgba(6,182,212,.1);--pr:#a855f7;--pBg:rgba(168,85,247,.1);--rad:10px;--sh:0 8px 32px rgba(0,0,0,.45)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,sans-serif;background:var(--b0);color:var(--t);overflow-x:hidden}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--b1)}
+::-webkit-scrollbar-thumb{background:var(--br2);border-radius:4px}
+.hd{position:fixed;top:0;left:0;right:0;height:60px;background:var(--b1);border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;padding:0 20px;z-index:100}
+.hd-l{display:flex;align-items:center;gap:14px}
+.logo{width:34px;height:34px;background:linear-gradient(135deg,var(--ac),var(--pr));border-radius:9px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff}
+.hd-t{font-size:16px;font-weight:600}
+.hd-s{font-size:11px;color:var(--t3)}
+.hd-r{display:flex;align-items:center;gap:10px}
+.badge{display:flex;align-items:center;gap:6px;padding:5px 12px;background:var(--gBg);color:var(--gn);border-radius:16px;font-size:11px;font-weight:600}
+.dot{width:6px;height:6px;background:var(--gn);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.btn{padding:7px 14px;border-radius:8px;border:1px solid var(--brd);background:var(--b2);color:var(--t);font-size:12px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:5px}
+.btn:hover{background:var(--b3);border-color:var(--br2)}
+.btn-p{background:var(--ac);border-color:var(--ac);color:#fff}
+.btn-p:hover{background:var(--a2)}
+.btn-g{background:var(--gn);border-color:var(--gn);color:#000}
+.btn-w{background:var(--wn);border-color:var(--wn);color:#000}
+.btn-sm{padding:5px 10px;font-size:11px}
+.sb{position:fixed;left:0;top:60px;bottom:0;width:220px;background:var(--b1);border-right:1px solid var(--brd);padding:14px 10px;overflow-y:auto;z-index:90}
+.nv-l{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.08em;padding:0 10px;margin-bottom:6px}
+.nv-i{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:7px;color:var(--t2);font-size:12px;font-weight:500;cursor:pointer;margin-bottom:2px}
+.nv-i:hover{background:var(--b2);color:var(--t)}
+.nv-i.ac{background:var(--b2);color:var(--ac);border-left:2px solid var(--ac)}
+.nv-i.ai{background:var(--pBg);color:var(--pr)}
+.nv-i.ai.ac{border-left-color:var(--pr)}
+.main{margin-left:220px;margin-top:60px;padding:22px}
+.pg{margin-bottom:22px}
+.pg-t{font-size:22px;font-weight:700;margin-bottom:4px}
+.pg-d{color:var(--t3);font-size:13px}
+.kpi-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-bottom:20px}
+.kpi{background:var(--b2);border:1px solid var(--brd);border-radius:var(--rad);padding:18px}
+.kpi-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.kpi-l{font-size:12px;color:var(--t3);font-weight:500}
+.kpi-ic{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.kpi-ic.s{background:var(--gBg);color:var(--gn)} .kpi-ic.w{background:var(--wBg);color:var(--wn)} .kpi-ic.d{background:var(--rBg);color:var(--rd)} .kpi-ic.i{background:var(--iBg);color:var(--in)} .kpi-ic.p{background:var(--pBg);color:var(--pr)}
+.kpi-v{font-size:26px;font-weight:700;margin-bottom:3px;line-height:1.1}
+.kpi-c{font-size:11px;font-weight:500;display:flex;align-items:center;gap:4px}
+.kpi-c.pos{color:var(--gn)} .kpi-c.neg{color:var(--rd)} .kpi-c.neu{color:var(--t3)}
+.prog-h{display:flex;justify-content:space-between;font-size:11px;color:var(--t3);margin-bottom:5px}
+.prog-bar{height:5px;background:var(--b3);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px}
+.prog-fill.s{background:var(--gn)} .prog-fill.w{background:var(--wn)} .prog-fill.d{background:var(--rd)} .prog-fill.i{background:var(--in)} .prog-fill.p{background:var(--pr)}
+.charts-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(400px,1fr));gap:14px;margin-bottom:20px}
+.chart-c{background:var(--b2);border:1px solid var(--brd);border-radius:var(--rad);padding:18px}
+.chart-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.chart-t{font-size:14px;font-weight:600}
+.tbl-s{background:var(--b2);border:1px solid var(--brd);border-radius:var(--rad);margin-bottom:20px;overflow:hidden}
+.tbl-h{padding:18px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.tbl-t{font-size:14px;font-weight:600}
+.srch{padding:7px 10px;background:var(--b3);border:1px solid var(--brd);border-radius:7px;color:var(--t);font-size:12px;width:180px}
+.srch:focus{outline:none;border-color:var(--ac)}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:10px 14px;font-size:11px;font-weight:600;color:var(--t3);text-transform:uppercase;border-bottom:1px solid var(--brd)}
+td{padding:10px 14px;font-size:12px;border-bottom:1px solid var(--brd)}
+tr:hover td{background:var(--b3)}
+.stag{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:4px;font-size:11px;font-weight:500}
+.stag.s{background:var(--gBg);color:var(--gn)} .stag.w{background:var(--wBg);color:var(--wn)} .stag.d{background:var(--rBg);color:var(--rd)}
+.vendor-g{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:14px;margin-bottom:20px}
+.vendor-c{background:var(--b2);border:1px solid var(--brd);border-radius:var(--rad);padding:18px}
+.vendor-h{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.vendor-av{width:38px;height:38px;border-radius:50%;background:var(--b3);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}
+.vendor-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.vendor-stat{text-align:center;padding:7px;background:var(--b3);border-radius:7px}
+.vendor-stat-v{font-size:15px;font-weight:700;margin-bottom:1px}
+.vendor-stat-l{font-size:10px;color:var(--t3)}
+.daily-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:7px;margin-bottom:20px}
+.daily-c{background:var(--b2);border:1px solid var(--brd);border-radius:var(--rad);padding:10px}
+.daily-ch{font-size:11px;color:var(--t3);margin-bottom:5px}
+.daily-cv{font-size:16px;font-weight:700;margin-bottom:3px}
+.daily-cp{font-size:10px;font-weight:500}
+.alert-c{background:var(--b2);border:1px solid var(--brd);border-radius:var(--rad);padding:14px;display:flex;align-items:flex-start;gap:10px;margin-bottom:10px}
+.alert-ic{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px}
+.alert-ct h4{font-size:12px;font-weight:600;margin-bottom:3px}
+.alert-ct p{font-size:11px;color:var(--t3);line-height:1.4}
+.alert-tm{font-size:10px;color:var(--t3);margin-top:6px}
+.reco-card{background:var(--b2);border:1px solid var(--brd);border-left:3px solid var(--pr);border-radius:var(--rad);padding:14px;margin-bottom:10px}
+.reco-card h4{font-size:13px;font-weight:600;margin-bottom:4px}
+.reco-card p{font-size:11px;color:var(--t3);line-height:1.4}
+.reco-card .reco-action{margin-top:8px;display:flex;gap:6px}
+.report-preview{background:var(--b3);border:1px solid var(--brd);border-radius:8px;padding:16px;font-size:12px;line-height:1.6;max-height:400px;overflow-y:auto}
+.ai-panel{position:fixed;right:-420px;top:60px;bottom:0;width:400px;background:var(--b1);border-left:1px solid var(--brd);z-index:150;transition:right .3s;display:flex;flex-direction:column}
+.ai-panel.open{right:0}
+.ai-panel-h{padding:16px;border-bottom:1px solid var(--brd);display:flex;align-items:center;justify-content:space-between}
+.ai-panel-h h3{font-size:15px;font-weight:600}
+.ai-badge{background:var(--pBg);color:var(--pr);font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700}
+.ai-close{background:none;border:none;color:var(--t3);font-size:18px;cursor:pointer}
+.ai-chat{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.ai-msg{max-width:85%;padding:10px 14px;border-radius:10px;font-size:12px;line-height:1.5;animation:fadeIn .2s}
+.ai-msg.bot{background:var(--b2);border:1px solid var(--brd);align-self:flex-start;border-bottom-left-radius:3px}
+.ai-msg.user{background:var(--ac);color:#fff;align-self:flex-end;border-bottom-right-radius:3px}
+.ai-label{font-size:10px;color:var(--pr);font-weight:700;margin-bottom:4px}
+.ai-input-area{padding:14px;border-top:1px solid var(--brd);display:flex;gap:8px}
+.ai-input{flex:1;padding:9px 12px;background:var(--b3);border:1px solid var(--brd);border-radius:8px;color:var(--t);font-size:12px}
+.ai-input:focus{outline:none;border-color:var(--pr)}
+.ai-send{width:38px;height:38px;background:var(--pr);border:none;border-radius:8px;color:#fff;font-size:16px;cursor:pointer}
+.ai-suggestions{padding:8px 14px;border-top:1px solid var(--brd);display:flex;flex-wrap:wrap;gap:6px}
+.ai-sug{padding:4px 10px;background:var(--b3);border:1px solid var(--brd);border-radius:14px;font-size:11px;color:var(--t2);cursor:pointer}
+.ai-sug:hover{border-color:var(--pr);color:var(--pr)}
+.ai-fab{position:fixed;bottom:22px;right:22px;width:56px;height:56px;background:linear-gradient(135deg,var(--pr),var(--ac));border:none;border-radius:50%;color:#fff;font-size:24px;cursor:pointer;z-index:140;box-shadow:0 4px 20px rgba(168,85,247,.4);display:flex;align-items:center;justify-content:center}
+.ai-fab:hover{transform:scale(1.1)}
+.modal-ov{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;display:none;align-items:center;justify-content:center}
+.modal-ov.active{display:flex}
+.modal{background:var(--b2);border:1px solid var(--brd);border-radius:12px;padding:22px;max-width:520px;width:92%;max-height:85vh;overflow-y:auto}
+.modal h3{font-size:17px;font-weight:600;margin-bottom:14px}
+.modal-x{float:right;background:none;border:none;color:var(--t3);font-size:20px;cursor:pointer}
+.drop-zone{border:2px dashed var(--br2);border-radius:11px;padding:36px;text-align:center;cursor:pointer}
+.drop-zone:hover{border-color:var(--ac);background:rgba(79,140,255,.04)}
+.drop-zone p{color:var(--t3);font-size:13px}
+.toast{position:fixed;bottom:20px;right:20px;padding:10px 18px;background:var(--b2);border:1px solid var(--brd);border-radius:8px;color:var(--t);font-size:12px;z-index:1000;box-shadow:var(--sh);animation:slideIn .3s}
+@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.page-sec{display:none}
+.page-sec.active{display:block;animation:fadeIn .3s}
+.mob-btn{display:none;background:none;border:none;color:var(--t);font-size:18px;cursor:pointer}
+@media(max-width:1024px){.sb{width:180px}.main{margin-left:180px}.charts-g{grid-template-columns:1fr}}
+@media(max-width:768px){.sb{display:none}.sb.open{display:block;position:fixed;z-index:95;width:250px}.main{margin-left:0;padding:14px}.kpi-g{grid-template-columns:1fr}.vendor-g{grid-template-columns:1fr}.charts-g{grid-template-columns:1fr}.hd{padding:0 14px}.badge{display:none}.mob-btn{display:block}.daily-g{grid-template-columns:repeat(2,1fr)}.ai-panel{width:100%;right:-100%}}
+</style>
+</head>
+<body>
+
+<header class="hd">
+<div class="hd-l"><button class="mob-btn" onclick="document.getElementById('sidebar').classList.toggle('open')">☰</button><div class="logo">IA</div><div><div class="hd-t">Monitor IA ORAN</div><div class="hd-s" id="hdrPeriod">Zone ORAN — Mai 2026</div></div></div>
+<div class="hd-r"><div class="badge"><span class="dot"></span>Actif</div><button class="btn btn-p" onclick="openModal('importModal')">↓ Importer</button><button class="btn btn-g" onclick="exportReport()">↓ Exporter</button></div>
+</header>
+
+<nav class="sb" id="sidebar">
+<div style="margin-bottom:22px"><div class="nv-l">Principal</div>
+<div class="nv-i ac" onclick="switchPage('dashboard',this)">📊 Dashboard</div>
+<div class="nv-i" onclick="switchPage('vendors',this)">👥 Vendeurs</div>
+<div class="nv-i" onclick="switchPage('daily',this)">📅 Quotidien</div></div>
+<div style="margin-bottom:22px"><div class="nv-l">IA</div>
+<div class="nv-i ai" onclick="switchPage('ai-insights',this)">⚡ Insights</div>
+<div class="nv-i ai" onclick="switchPage('ai-forecast',this)">📈 Prévisions</div>
+<div class="nv-i ai" onclick="switchPage('ai-reco',this)">💡 Recos</div>
+<div class="nv-i ai" onclick="switchPage('ai-report',this)">📄 Rapport</div></div>
+<div style="margin-bottom:22px"><div class="nv-l">Gestion</div>
+<div class="nv-i" onclick="switchPage('stock',this)">📦 Stock</div>
+<div class="nv-i" onclick="switchPage('alerts',this)">🔔 Alertes</div>
+<div class="nv-i" onclick="switchPage('settings',this)">⚙️ Paramètres</div></div>
+</nav>
+
+<main class="main">
+<section class="page-sec active" id="page-dashboard"><div class="pg"><h1 class="pg-t">Tableau de Bord</h1><p class="pg-d" id="dashDesc">Vue d'ensemble — Mai 2026</p></div><div class="kpi-g" id="kpiGrid"></div><div class="alert-g" id="alertGrid"></div><div class="charts-g"><div class="chart-c"><div class="chart-h"><div><div class="chart-t">Performance Vendeurs</div><div class="chart-sub">Réalisation vs Objectif</div></div></div><canvas id="vendorChart" height="280"></canvas></div><div class="chart-c"><div class="chart-h"><div><div class="chart-t">Évolution Quotidienne</div><div class="chart-sub">Réalisation journalière</div></div></div><canvas id="dailyChart" height="280"></canvas></div></div></section>
+
+<section class="page-sec" id="page-vendors"><div class="pg"><h1 class="pg-t">Suivi Vendeurs</h1><p class="pg-d">Performance individuelle</p></div><div class="vendor-g" id="vendorGrid"></div></section>
+
+<section class="page-sec" id="page-daily"><div class="pg"><h1 class="pg-t">Ventes Quotidiennes</h1><p class="pg-d">Récapitulatif</p></div><div class="daily-g" id="dailyGrid"></div><div class="tbl-s"><div class="tbl-h"><h2 class="tbl-t">Tableau</h2><div class="tbl-tool"><select class="btn btn-sm" id="filterVendor" onchange="renderDailyTbl()"><option value="all">Tous</option></select></div></div><div class="tbl-w"><table><thead><tr><th>Date</th><th>ABDELRAHMEN</th><th>NOURDINE</th><th>YOUCEF</th><th>HOUARI</th><th>MT/GROS</th><th>Total</th><th>%</th></tr></thead><tbody id="dailyTbody"></tbody></table></div></div></section>
+
+<section class="page-sec" id="page-ai-insights"><div class="pg"><h1 class="pg-t">Insights IA</h1><p class="pg-d">Analyse des données</p></div><div class="kpi-g" id="aiKpis"></div><div id="insightsContent"></div></section>
+
+<section class="page-sec" id="page-ai-forecast"><div class="pg"><h1 class="pg-t">Prévisions IA</h1><p class="pg-d">Prédictions ventes & stock</p></div><div class="charts-g"><div class="chart-c"><div class="chart-h"><div class="chart-t">Ventes — 8 prochains jours</div><div class="chart-sub">Régression linéaire</div></div><canvas id="forecastChart" height="300"></canvas><p class="forecast-note">⚡ Basé sur l'historique</p></div><div class="chart-c"><div class="chart-h"><div class="chart-t">Runway Stock (jours)</div><div class="chart-sub">Avant rupture</div></div><canvas id="runwayChart" height="300"></canvas></div></div><div class="tbl-s"><div class="tbl-h"><h2 class="tbl-t">Alertes Stock Prédictives</h2></div><div class="tbl-w"><table><thead><tr><th>Produit</th><th>Stock</th><th>Vélocité J7</th><th>Runway</th><th>Statut</th></tr></thead><tbody id="forecastTbody"></tbody></table></div></div></section>
+
+<section class="page-sec" id="page-ai-reco"><div class="pg"><h1 class="pg-t">Recommandations IA</h1><p class="pg-d">Suggestions d'optimisation</p></div><div id="recoContent"></div></section>
+
+<section class="page-sec" id="page-ai-report"><div class="pg"><h1 class="pg-t">Rapport Automatisé</h1><p class="pg-d">Génération automatique</p></div><div class="kpi-g" style="margin-bottom:16px"><div class="kpi" onclick="generateReport('weekly')"><div class="kpi-h"><span class="kpi-l">Hebdomadaire</span><div class="kpi-ic p">📋</div></div><p style="font-size:12px;color:var(--t3)">Synthèse semaine</p></div><div class="kpi" onclick="generateReport('vendor')"><div class="kpi-h"><span class="kpi-l">Vendeurs</span><div class="kpi-ic s">👥</div></div><p style="font-size:12px;color:var(--t3)">Analyse individuelle</p></div><div class="kpi" onclick="generateReport('stock')"><div class="kpi-h"><span class="kpi-l">Stock</span><div class="kpi-ic w">📦</div></div><p style="font-size:12px;color:var(--t3)">État & besoins</p></div><div class="kpi" onclick="generateReport('full')"><div class="kpi-h"><span class="kpi-l">Complet</span><div class="kpi-ic i">📑</div></div><p style="font-size:12px;color:var(--t3)">Rapport mensuel</p></div></div><div class="report-preview" id="reportOutput"><p style="color:var(--t3);text-align:center;padding:40px 0">Sélectionnez un type de rapport ci-dessus.</p></div><div style="margin-top:12px;display:flex;gap:8px"><button class="btn btn-p" onclick="downloadReport()">↓ Télécharger</button><button class="btn" onclick="copyReport()">📋 Copier</button></div></section>
+
+<section class="page-sec" id="page-stock"><div class="pg"><h1 class="pg-t">Stock & Produits</h1><p class="pg-d">Inventaire détaillé</p></div><div class="kpi-g" id="stockKpis"></div><div class="tbl-s"><div class="tbl-h"><h2 class="tbl-t">Inventaire</h2><input type="text" class="srch" placeholder="Rechercher..." onkeyup="filterStock(this.value)"><button class="btn btn-sm btn-p" onclick="openStockModal()">+ Modifier</button></div><div class="tbl-w"><table><thead><tr><th>Produit</th><th>Variantes</th><th>Stock</th><th>Init.</th><th>Vendu</th><th>Statut</th><th>Actions</th></tr></thead><tbody id="stockTbody"></tbody></table></div></div><div class="tbl-s"><div class="tbl-h"><h2 class="tbl-t">Détail Fragrance</h2></div><div class="tbl-w"><table><thead><tr><th>Produit</th><th>Type</th><th>Fragrance</th><th>Qté</th></tr></thead><tbody id="fragTbody"></tbody></table></div></div></section>
+
+<section class="page-sec" id="page-alerts"><div class="pg"><h1 class="pg-t">Centre d'Alertes</h1><p class="pg-d">Notifications</p></div><div id="alertsPage"></div></section>
+
+<section class="page-sec" id="page-settings"><div class="pg"><h1 class="pg-t">Paramètres & Import</h1><p class="pg-d">Configuration</p></div><div class="tbl-s"><div class="tbl-h"><h2 class="tbl-t">Import Excel</h2></div><div style="padding:22px"><div class="drop-zone" onclick="document.getElementById('fileInput').click()"><p><strong>Cliquez ou glissez un fichier .xlsx</strong></p><p style="font-size:11px">Format : feuilles journalières (LUNDI 01, MARDI 02…) + (optionnel) feuille "Stock"</p></div><input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none" onchange="handleFile(event)"><div id="importStatus" style="margin-top:14px"></div></div></div></section>
+</main>
+
+<!-- AI Panel -->
+<div class="ai-panel" id="aiPanel">
+<div class="ai-panel-h"><h3>🤖 Assistant IA <span class="ai-badge">BETA</span></h3><button class="ai-close" onclick="toggleAI()">×</button></div>
+<div class="ai-chat" id="aiChat"><div class="ai-msg bot"><div class="ai-label">🤖 Assistant</div>Bonjour ! Posez-moi une question sur les ventes, le stock ou les prévisions.</div></div>
+<div class="ai-suggestions"><span class="ai-sug" onclick="askAI('Quel vendeur performe le mieux ?')">Meilleur vendeur</span><span class="ai-sug" onclick="askAI('Prévois les ventes')">Prévisions</span><span class="ai-sug" onclick="askAI('Quels produits sont en rupture ?')">Ruptures</span><span class="ai-sug" onclick="askAI('Donne-moi des recommandations')">Recommandations</span></div>
+<div class="ai-input-area"><input type="text" class="ai-input" id="aiInput" placeholder="Votre question..." onkeydown="if(event.key==='Enter')sendAI()"><button class="ai-send" onclick="sendAI()">➤</button></div>
+</div>
+<button class="ai-fab" onclick="toggleAI()">🤖</button>
+
+<div class="modal-ov" id="importModal"><div class="modal"><button class="modal-x" onclick="closeModal('importModal')">×</button><h3>Importer Excel</h3><div class="drop-zone" onclick="document.getElementById('modalFileInput').click()"><p>Cliquez pour sélectionner</p></div><input type="file" id="modalFileInput" accept=".xlsx,.xls" style="display:none" onchange="handleFile(event)"><div id="modalImportStatus" style="margin-top:14px"></div></div></div>
+<div class="modal-ov" id="stockModal"><div class="modal"><button class="modal-x" onclick="closeModal('stockModal')">×</button><h3>Modifier Stock</h3><select class="finput" id="editProduct"></select><input type="number" class="finput" id="editStock" min="0" style="margin-top:8px"><button class="btn btn-p" onclick="saveStockEdit()" style="width:100%;margin-top:8px">Enregistrer</button></div></div>
+
+<script>
+// ----------------------------- STRUCTURE DONNÉES -----------------------------
+let D = {
+  zone: "ORAN",
+  period: "Mai 2026",
+  monthNum: 5,           // numéro du mois courant (1-12), utilisé pour formater les dates
+  joursO: 26,
+  objDD: 5200000,
+  objGROS: 2300000,
+  objTot: 7500000,
+  vendeurs: [
+    {id:1, van:"Van 01", nom:"ABDELRAHMEN", canal:"DD", obj:1300000, objJ:50000},
+    {id:2, van:"Van 02", nom:"NOURDINE", canal:"DD", obj:1300000, objJ:50000},
+    {id:3, van:"Van 03", nom:"YOUCEF", canal:"DD", obj:1300000, objJ:50000},
+    {id:4, van:"Van 04", nom:"HOUARI", canal:"DD", obj:1300000, objJ:50000},
+    {id:5, van:"Van 05", nom:"MT/GROS", canal:"Gros", obj:2300000, objJ:88462}
+  ],
+  dates: [],
+  dayNums: [],   // numéros de jour effectivement importés (pour les prévisions)
+  ventes: [],    // [jour][vendeur]
+  stock: []      // sera rempli par défaut ou via import
+};
+
+// stock par défaut (utilisé si aucune feuille Stock trouvée)
+const defaultStock = [
+  {prod:"JOY 60",init:744,var:[{t:"60 pcs",f:"FRAÎCHER",q:136},{t:"60 pcs",f:"lemon flower",q:130},{t:"60 pcs",f:"Bébé Soft",q:126},{t:"60 pcs",f:"Red Rose",q:10},{t:"60 pcs",f:"BonBon fresh",q:126}]},
+  {prod:"JOY 60 PROMO",init:2242,var:[{t:"60 pcs promo",f:"FRAÎCHER",q:364},{t:"60 pcs promo",f:"lemon flower",q:244},{t:"60 pcs promo",f:"Bébé Soft",q:324},{t:"60 pcs promo",f:"Red Rose",q:286},{t:"60 pcs promo",f:"BonBon fresh",q:252}]},
+  {prod:"EASY 72/MAX",init:1075,var:[{t:"72 pcs",f:"Bébé soft",q:505},{t:"72 pcs",f:"Red Rose",q:135},{t:"72 pcs",f:"BonBon fresh",q:71}]},
+  {prod:"SENSITIVE 72",init:240,var:[]},
+  {prod:"GOLD LINE 72",init:198,var:[{t:"72 pcs GL",f:"BéBé kids",q:78}]},
+  {prod:"JOY 84",init:0,var:[]},
+  {prod:"JOY 120",init:127,var:[{t:"120 pcs",f:"BéBé kids",q:46}]},
+  {prod:"POCKET 18",init:1258,var:[{t:"Pocket 18",f:"lemon flower",q:419},{t:"Pocket 18",f:"Red Rose",q:419},{t:"Pocket 18",f:"Cocktail",q:1}]},
+  {prod:"POCKET 36",init:119,var:[]}
+];
+
+// Initialisation
+function initStock() {
+  D.stock = JSON.parse(JSON.stringify(defaultStock));
+  D.stock.forEach(s => { s.stock = s.var.reduce((a,b)=>a+b.q,0); s.vendu = s.init - s.stock; });
+}
+initStock();
+
+// Recalcul global
+function calc() {
+  D.vendeurs.forEach(v => v.real = 0);
+  D.ventes.forEach(day => {
+    day.forEach((val, idx) => { if(D.vendeurs[idx]) D.vendeurs[idx].real += val; });
+  });
+  D.realDD = D.vendeurs.filter(v=>v.canal==='DD').reduce((s,v)=>s+v.real,0);
+  D.realGROS = D.vendeurs.filter(v=>v.canal==='Gros').reduce((s,v)=>s+v.real,0);
+  D.realTot = D.realDD + D.realGROS;
+  D.objTot = D.vendeurs.reduce((s,v)=>s+v.obj,0);
+}
+calc();
+
+// Utilitaires
+const f = n => (n||0).toLocaleString('fr-FR');
+const mm = () => String(D.monthNum).padStart(2,'0');   // mois formaté "05"
+
+// Régression linéaire réutilisable : renvoie {m, b}
+function linReg(yVals) {
+  const n = yVals.length;
+  if (n < 2) return { m: 0, b: n ? yVals[0] : 0 };
+  const x = Array.from({length:n}, (_,i)=>i+1);
+  const sx = x.reduce((a,b)=>a+b,0), sy = yVals.reduce((a,b)=>a+b,0);
+  const sxy = x.reduce((a,b,i)=>a+b*yVals[i],0), sx2 = x.reduce((a,b)=>a+b*b,0);
+  const denom = n*sx2 - sx*sx;
+  const m = denom ? (n*sxy - sx*sy) / denom : 0;
+  const b = (sy - m*sx) / n;
+  return { m, b };
+}
+
+// Jours futurs à prédire (les 8 jours suivant le dernier jour importé)
+function futureDayNums(count = 8) {
+  const last = D.dayNums.length ? D.dayNums[D.dayNums.length-1] : 0;
+  return Array.from({length:count}, (_,i)=>last + i + 1);
+}
+
+// ----------------------------- GRAPHIQUES -----------------------------
+let vendorChart, dailyChart, forecastChart, runwayChart;
+function destroyCharts() {
+  if(vendorChart) vendorChart.destroy();
+  if(dailyChart) dailyChart.destroy();
+  if(forecastChart) forecastChart.destroy();
+  if(runwayChart) runwayChart.destroy();
+}
+function initCharts() {
+  const opts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#9898a4' } } }, scales: { x: { ticks: { color: '#6a6a78' }, grid: { color: '#1e1e24' } }, y: { ticks: { color: '#6a6a78' }, grid: { color: '#1e1e24' } } } };
+  vendorChart = new Chart(document.getElementById('vendorChart'), {
+    type: 'bar', data: { labels: D.vendeurs.map(v=>v.nom), datasets: [
+      { label: 'Réalisation', data: D.vendeurs.map(v=>v.real), backgroundColor: 'rgba(79,140,255,.75)', borderRadius: 4 },
+      { label: 'Objectif', data: D.vendeurs.map(v=>v.obj), backgroundColor: 'rgba(163,163,163,.25)', borderRadius: 4 }
+    ] }, options: opts
+  });
+  const dailyTotals = D.ventes.map(day => day.reduce((a,b)=>a+b,0));
+  dailyChart = new Chart(document.getElementById('dailyChart'), {
+    type: 'line', data: { labels: D.dates, datasets: [{ label: 'Réalisation jour (DA)', data: dailyTotals, borderColor: '#4f8cff', backgroundColor: 'rgba(79,140,255,.08)', fill: true, tension: 0.3, pointRadius: 3 }] }, options: opts
+  });
+}
+
+function initForecastCharts() {
+  if(!D.ventes.length) return;
+  const dailyTotals = D.ventes.map(day => day.reduce((a,b)=>a+b,0));
+  const { m, b } = linReg(dailyTotals);
+  // index continu : le 1er jour futur prolonge l'axe x de l'historique
+  const futureDays = futureDayNums(8);
+  const pred = futureDays.map((_,i) => Math.max(0, Math.round(m * (dailyTotals.length + i + 1) + b)));
+  const allLabels = [...D.dates, ...futureDays.map(d=>String(d).padStart(2,'0')+'/'+mm())];
+  const histData = [...dailyTotals, ...Array(futureDays.length).fill(null)];
+  const predData = [...Array(dailyTotals.length-1).fill(null), dailyTotals[dailyTotals.length-1], ...pred];
+  const opts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: '#9898a4' } } }, scales: { x: { ticks: { color: '#6a6a78' }, grid: { color: '#1e1e24' } }, y: { ticks: { color: '#6a6a78' }, grid: { color: '#1e1e24' } } } };
+  if(forecastChart) forecastChart.destroy();
+  forecastChart = new Chart(document.getElementById('forecastChart'), {
+    type: 'line', data: { labels: allLabels, datasets: [
+      { label: 'Historique', data: histData, borderColor: '#4f8cff', backgroundColor: 'rgba(79,140,255,.06)', fill: true, tension: 0.3, pointRadius: 3 },
+      { label: 'Prévision', data: predData, borderColor: '#a855f7', borderDash: [6,4], fill: false, tension: 0.3, pointRadius: 4, pointStyle: 'triangle' }
+    ] }, options: opts
+  });
+  // Runway chart
+  const nDays = D.ventes.length || 1;
+  const runwayLabels = D.stock.filter(s=>s.stock>0).map(s=>s.prod);
+  const runwayVals = D.stock.filter(s=>s.stock>0).map(s=>{
+    const vel = s.init ? s.vendu / nDays : 0;
+    return vel > 0 ? Math.round(s.stock / vel) : 999;
+  });
+  if(runwayChart) runwayChart.destroy();
+  runwayChart = new Chart(document.getElementById('runwayChart'), {
+    type: 'bar', data: { labels: runwayLabels, datasets: [{ label: 'Jours avant rupture', data: runwayVals, backgroundColor: runwayVals.map(v=>v<7?'rgba(239,68,68,.7)':v<14?'rgba(245,158,11,.7)':'rgba(34,197,94,.7)'), borderRadius: 4 }] }, options: opts
+  });
+  // table
+  let rows = '';
+  D.stock.forEach(s => {
+    const vel = s.init ? s.vendu / nDays : 0;
+    const rw = vel > 0 ? Math.round(s.stock / vel) : '∞';
+    const cls = s.stock===0 ? 'd' : (s.stock<100 ? 'w' : 's');
+    rows += `<tr><td><strong>${s.prod}</strong></td><td>${f(s.stock)}</td><td>${vel.toFixed(1)}/j</td><td>${rw}${rw!=='∞'?'j':''}</td><td><span class="stag ${cls}">${s.stock===0?'Rupture':(rw!=='∞'&&rw<7)?'Critique':(rw!=='∞'&&rw<14)?'Attention':'OK'}</span></td></tr>`;
+  });
+  document.getElementById('forecastTbody').innerHTML = rows;
+}
+
+// ----------------------------- RENDU -----------------------------
+function renderAll() {
+  // KPIs
+  const p = D.objTot ? Math.round(D.realTot/D.objTot*10000)/100 : 0;
+  const pDD = D.objDD ? Math.round(D.realDD/D.objDD*10000)/100 : 0;
+  const pG = D.objGROS ? Math.round(D.realGROS/D.objGROS*10000)/100 : 0;
+  document.getElementById('kpiGrid').innerHTML = `
+    <div class="kpi"><div class="kpi-h"><span class="kpi-l">Réal. Totale</span><div class="kpi-ic i">📊</div></div><div class="kpi-v">${f(D.realTot)} DA</div><div class="kpi-c ${p>=50?'pos':'neg'}">${p}% obj.</div><div class="prog-bar"><div class="prog-fill i" style="width:${Math.min(p,100)}%"></div></div></div>
+    <div class="kpi"><div class="kpi-h"><span class="kpi-l">DD</span><div class="kpi-ic s">📈</div></div><div class="kpi-v">${f(D.realDD)} DA</div><div class="kpi-c pos">${pDD}%</div><div class="prog-bar"><div class="prog-fill s" style="width:${Math.min(pDD,100)}%"></div></div></div>
+    <div class="kpi"><div class="kpi-h"><span class="kpi-l">GROS</span><div class="kpi-ic w">📦</div></div><div class="kpi-v">${f(D.realGROS)} DA</div><div class="kpi-c pos">${pG}%</div><div class="prog-bar"><div class="prog-fill w" style="width:${Math.min(pG,100)}%"></div></div></div>
+    <div class="kpi"><div class="kpi-h"><span class="kpi-l">Écart</span><div class="kpi-ic d">⚠️</div></div><div class="kpi-v">${f(D.objTot-D.realTot)} DA</div><div class="kpi-c neg">${Math.round((100-p)*100)/100}% restant</div><div class="prog-bar"><div class="prog-fill d" style="width:${D.joursO?Math.min(D.dates.length/D.joursO*100,100):0}%"></div></div></div>`;
+  // Alertes
+  const rupt = D.stock.filter(s=>s.stock===0);
+  const bas = D.stock.filter(s=>s.stock>0 && s.stock<100);
+  let alerts = `<div class="alert-c"><div class="alert-ic" style="background:var(--rBg);color:var(--rd)">⚠️</div><div class="alert-ct"><h4>Objectif non atteint</h4><p>Réalisation à ${p}%</p></div></div>`;
+  if (D.ventes.length) {
+    const maxDay = D.ventes.reduce((m,d,i)=>d.reduce((s,v)=>s+v,0) > D.ventes[m].reduce((s,v)=>s+v,0) ? i : m,0);
+    alerts += `<div class="alert-c"><div class="alert-ic" style="background:var(--gBg);color:var(--gn)">🔥</div><div class="alert-ct"><h4>Pic — ${D.dates[maxDay]}</h4><p>${f(D.ventes[maxDay].reduce((s,v)=>s+v,0))} DA</p></div></div>`;
+  }
+  rupt.forEach(s=>alerts+=`<div class="alert-c"><div class="alert-ic" style="background:var(--rBg);color:var(--rd)">🔴</div><div class="alert-ct"><h4>Rupture — ${s.prod}</h4><p>Stock épuisé</p></div></div>`);
+  bas.forEach(s=>alerts+=`<div class="alert-c"><div class="alert-ic" style="background:var(--wBg);color:var(--wn)">🟡</div><div class="alert-ct"><h4>Stock bas — ${s.prod}</h4><p>${s.stock} u.</p></div></div>`);
+  document.getElementById('alertGrid').innerHTML = alerts;
+  // Vendeurs
+  document.getElementById('vendorGrid').innerHTML = D.vendeurs.map(v => {
+    const pct = v.obj ? Math.round(v.real/v.obj*10000)/100 : 0;
+    const cl = pct>=35 ? 'w' : 'd';
+    return `<div class="vendor-c"><div class="vendor-h"><div class="vendor-av" style="background:var(--${cl}Bg);color:var(--${cl})">${v.nom.substring(0,2)}</div><div><h3>${v.nom}</h3><p style="font-size:11px;color:var(--t3)">${v.canal}</p></div></div><div class="vendor-stats"><div class="vendor-stat"><div class="vendor-stat-v">${f(v.real)}</div><div class="vendor-stat-l">Réal.</div></div><div class="vendor-stat"><div class="vendor-stat-v">${pct}%</div><div class="vendor-stat-l">Objectif</div></div></div><div class="prog-bar" style="margin-top:8px"><div class="prog-fill ${cl}" style="width:${Math.min(pct,100)}%"></div></div></div>`;
+  }).join('');
+  // Daily grid
+  const dailyTot = D.ventes.map(d=>d.reduce((a,b)=>a+b,0));
+  const objJTot = D.vendeurs.reduce((s,v)=>s+v.objJ,0);
+  document.getElementById('dailyGrid').innerHTML = D.dates.map((d,i)=>{
+    const pct = objJTot ? Math.round(dailyTot[i]/objJTot*10000)/100 : 0;
+    const c = pct>=100 ? 's' : (pct>=50 ? 'w' : 'd');
+    return `<div class="daily-c"><div class="daily-ch">${d}</div><div class="daily-cv">${f(dailyTot[i])} DA</div><div class="daily-cp" style="color:var(--${c})">${pct}% obj.</div><div class="prog-bar" style="margin-top:4px"><div class="prog-fill ${c}" style="width:${Math.min(pct,100)}%"></div></div></div>`;
+  }).join('') || '<p style="color:var(--t3);grid-column:1/-1">Aucune donnée importée.</p>';
+  renderDailyTbl();
+  renderStock();
+  renderAlertsPage();
+  renderAIInsights();
+  renderAIReco();
+  destroyCharts();
+  initCharts();
+  if(document.getElementById('page-ai-forecast').classList.contains('active')) initForecastCharts();
+}
+
+function renderDailyTbl() {
+  const fv = document.getElementById('filterVendor').value;
+  const objJTot = D.vendeurs.reduce((s,v)=>s+v.objJ,0);
+  document.getElementById('dailyTbody').innerHTML = D.ventes.map((day,i)=>{
+    const total = day.reduce((a,b)=>a+b,0);
+    const pct = objJTot ? Math.round(total/objJTot*10000)/100 : 0;
+    const cls = pct>=100?'s':pct>=50?'w':'d';
+    return `<tr><td>${D.dates[i]}</td>${[0,1,2,3,4].map(j=>`<td>${fv==='all'||fv==j ? f(day[j]) : '-'}</td>`).join('')}<td><strong>${f(total)}</strong></td><td><span class="stag ${cls}">${pct}%</span></td></tr>`;
+  }).join('');
+}
+
+function renderStock() {
+  const rupt = D.stock.filter(s=>s.stock===0);
+  const bas = D.stock.filter(s=>s.stock>0 && s.stock<100);
+  document.getElementById('stockKpis').innerHTML = `
+    <div class="kpi"><div class="kpi-h"><span class="kpi-l">Unités</span><div class="kpi-ic i">📦</div></div><div class="kpi-v">${f(D.stock.reduce((s,v)=>s+v.stock,0))}</div></div>
+    <div class="kpi"><div class="kpi-h"><span class="kpi-l">Ruptures</span><div class="kpi-ic d">🔴</div></div><div class="kpi-v">${rupt.length}</div><div class="kpi-c neg">${rupt.map(s=>s.prod).join(', ')||'Aucune'}</div></div>
+    <div class="kpi"><div class="kpi-h"><span class="kpi-l">Stock bas</span><div class="kpi-ic w">⚠️</div></div><div class="kpi-v">${bas.length}</div><div class="kpi-c neu">${bas.map(s=>s.prod).join(', ')||'Aucun'}</div></div>`;
+  document.getElementById('stockTbody').innerHTML = D.stock.map(s=>{
+    const cls = s.stock===0?'d':s.stock<100?'w':'s';
+    const st = s.stock===0?'Rupture':s.stock<100?'Bas':'OK';
+    return `<tr><td><strong>${s.prod}</strong></td><td>${s.var.length}</td><td>${f(s.stock)}</td><td>${f(s.init)}</td><td>${f(s.vendu)}</td><td><span class="stag ${cls}">${st}</span></td><td><button class="btn btn-sm" onclick="openStockModal('${s.prod}')">Modifier</button></td></tr>`;
+  }).join('');
+  let fragHtml = '';
+  D.stock.forEach(s => s.var.forEach(v => fragHtml += `<tr><td>${s.prod}</td><td>${v.t}</td><td>${v.f}</td><td>${v.q}</td></tr>`));
+  document.getElementById('fragTbody').innerHTML = fragHtml;
+}
+
+function renderAlertsPage() {
+  let html = '';
+  D.stock.filter(s=>s.stock===0).forEach(s=>html+=`<div class="alert-c"><div class="alert-ic" style="background:var(--rBg);color:var(--rd)">🔴</div><div class="alert-ct"><h4>Rupture — ${s.prod}</h4></div></div>`);
+  D.stock.filter(s=>s.stock>0 && s.stock<100).forEach(s=>html+=`<div class="alert-c"><div class="alert-ic" style="background:var(--wBg);color:var(--wn)">🟡</div><div class="alert-ct"><h4>Stock bas — ${s.prod}</h4><p>${s.stock} u.</p></div></div>`);
+  document.getElementById('alertsPage').innerHTML = html || '<p style="color:var(--t3)">Aucune alerte</p>';
+}
+
+function renderAIInsights() {
+  if (!D.ventes.length) {
+    document.getElementById('aiKpis').innerHTML = '';
+    document.getElementById('insightsContent').innerHTML = '<div class="reco-card"><h4>Aucune donnée</h4><p>Importez un fichier Excel pour générer les insights.</p></div>';
+    return;
+  }
+  const best = D.vendeurs.reduce((a,b)=>a.real>b.real?a:b);
+  const worst = D.vendeurs.reduce((a,b)=>a.real<b.real?a:b);
+  const avgDaily = D.ventes.reduce((s,d)=>s+d.reduce((a,b)=>a+b,0),0)/D.ventes.length;
+  const daysLeft = Math.max(0, D.joursO - D.dates.length);
+  const needed = Math.round((D.objTot - D.realTot) / Math.max(1, daysLeft));
+  document.getElementById('aiKpis').innerHTML = `
+    <div class="kpi"><div class="kpi-h"><span class="kpi-l">Meilleur</span><div class="kpi-ic s">🏆</div></div><div class="kpi-v" style="font-size:18px">${best.nom}</div><div class="kpi-c pos">${f(best.real)} DA</div></div>
+    <div class="kpi"><div class="kpi-h"><span class="kpi-l">Vélocité</span><div class="kpi-ic i">📊</div></div><div class="kpi-v">${f(Math.round(avgDaily))} DA/j</div></div>
+    <div class="kpi"><div class="kpi-h"><span class="kpi-l">Besoin/j</span><div class="kpi-ic d">🎯</div></div><div class="kpi-v">${f(needed)} DA</div></div>
+    <div class="kpi"><div class="kpi-h"><span class="kpi-l">Score IA</span><div class="kpi-ic p">⭐</div></div><div class="kpi-v">${D.objTot?Math.round(D.realTot/D.objTot*100*1.2):0}%</div></div>`;
+  document.getElementById('insightsContent').innerHTML = `<div class="reco-card"><h4>Performance</h4><p>Meilleur : ${best.nom} (${f(best.real)} DA). Moins bon : ${worst.nom} (${f(worst.real)} DA).</p></div><div class="reco-card"><h4>Objectif</h4><p>Il reste ${daysLeft} jours, besoin de ${f(needed)} DA/j.</p></div>`;
+}
+
+function renderAIReco() {
+  const recos = [
+    {t:'Rééquilibrage Stock',d:'Transfert JOY 60 PROMO vers zones demande forte.',btn:'Transférer'},
+    {t:'Urgent — SENSITIVE 72',d:'Rupture totale, commander 500 unités.',btn:'Commander'},
+    {t:'Activation MT/GROS',d:'Seulement quelques jours de vente, augmenter fréquence.',btn:'Planifier'},
+    {t:'Focus jours faibles',d:'Analyser les jours avec faible réalisation.',btn:'Analyser'}
+  ];
+  document.getElementById('recoContent').innerHTML = recos.map(r=>`<div class="reco-card"><h4>${r.t}</h4><p>${r.d}</p><div class="reco-action"><button class="btn btn-sm btn-p" onclick="showToast('Action enregistrée')">${r.btn}</button></div></div>`).join('');
+}
+
+// ----------------------------- IMPORT EXCEL -----------------------------
+const MOIS = { janvier:1, "février":2, fevrier:2, mars:3, avril:4, mai:5, juin:6, juillet:7, "août":8, aout:8, septembre:9, octobre:10, novembre:11, "décembre":12, decembre:12 };
+
+async function handleFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const statusDiv = document.getElementById('importStatus') || document.getElementById('modalImportStatus');
+  if(statusDiv) statusDiv.innerHTML = '<p style="color:var(--in)">⏳ Lecture du fichier...</p>';
+  try {
+    const data = await file.arrayBuffer();
+    const wb = XLSX.read(data, { type: 'array' });
+
+    // 1. Mettre à jour la période depuis le nom du fichier
+    const periodMatch = file.name.match(/(Janvier|Février|Fevrier|Mars|Avril|Mai|Juin|Juillet|Août|Aout|Septembre|Octobre|Novembre|Décembre|Decembre)\s?(\d{4})/i);
+    if (periodMatch) {
+      D.period = periodMatch[1] + ' ' + periodMatch[2];
+      const key = periodMatch[1].toLowerCase();
+      if (MOIS[key]) D.monthNum = MOIS[key];
+    }
+    document.getElementById('hdrPeriod').textContent = `Zone ORAN — ${D.period}`;
+    const dashDesc = document.getElementById('dashDesc');
+    if (dashDesc) dashDesc.textContent = `Vue d'ensemble — ${D.period}`;
+
+    // 2. Extraire les ventes depuis les feuilles journalières (tous les jours de la semaine)
+    const daySheets = wb.SheetNames.filter(n => /^(LUNDI|MARDI|MERCREDI|JEUDI|VENDREDI|SAMEDI|DIMANCHE)\s+\d+$/i.test(n));
+    if (daySheets.length === 0) {
+      if(statusDiv) statusDiv.innerHTML = '<p style="color:var(--rd)">❌ Aucune feuille journalière trouvée (LUNDI 01, MARDI 02...)</p>';
+      return;
+    }
+    // tri par numéro de jour
+    daySheets.sort((a,b) => parseInt(a.match(/\d+/)[0]) - parseInt(b.match(/\d+/)[0]));
+    D.dates = [];
+    D.dayNums = [];
+    D.ventes = [];
+    const vendeurMap = { "ABDELRAHMEN":0, "NOURDINE":1, "YOUCEF":2, "HOUARI":3, "MT/GROS":4 };
+
+    for (let sheetName of daySheets) {
+      const ws = wb.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+      // Chercher la colonne "Realisation" (généralement Z)
+      let colIdx = -1;
+      if (rows[0]) {
+        for (let c=0; c<rows[0].length; c++) {
+          if (rows[0][c] && rows[0][c].toString().toLowerCase().includes('realisation')) {
+            colIdx = c;
+            break;
+          }
+        }
+      }
+      if (colIdx === -1) colIdx = 25; // fallback colonne Z (index 25)
+      const daySales = [0,0,0,0,0];
+      // Parcourir les lignes pour trouver les vendeurs
+      for (let row of rows) {
+        if (!row || row.length < 2) continue;
+        const nom = row[1] ? row[1].toString().trim().toUpperCase() : '';
+        if (Object.prototype.hasOwnProperty.call(vendeurMap, nom)) {
+          let val = row[colIdx];
+          if (typeof val === 'string') val = parseFloat(val.replace(/[^0-9.-]/g, '')) || 0;
+          if (typeof val !== 'number' || isNaN(val)) val = 0;
+          daySales[vendeurMap[nom]] = val;
+        }
+      }
+      // extraire la date (ex: "LUNDI 01" -> "01/05")
+      const dayNum = parseInt(sheetName.match(/\d+/)[0]);
+      D.dayNums.push(dayNum);
+      D.dates.push(String(dayNum).padStart(2,'0') + '/' + mm());
+      D.ventes.push(daySales);
+    }
+
+    // 3. Stock (optionnel) : feuille "Stock"
+    const stockSheet = wb.Sheets['Stock'];
+    if (stockSheet) {
+      const stockData = XLSX.utils.sheet_to_json(stockSheet, { header: 1, defval: '' });
+      const newStockMap = new Map();
+      for (let i=1; i<stockData.length; i++) {
+        const row = stockData[i];
+        if (!row[0]) continue;
+        const prod = row[0].toString().trim();
+        const type = row[1] ? row[1].toString().trim() : '';
+        const frag = row[2] ? row[2].toString().trim() : '';
+        const qte = parseInt(row[3]) || 0;
+        if (!newStockMap.has(prod)) newStockMap.set(prod, []);
+        newStockMap.get(prod).push({t: type, f: frag, q: qte});
+      }
+      if (newStockMap.size > 0) {
+        const newStock = [];
+        for (const [prod, vars] of newStockMap.entries()) {
+          const total = vars.reduce((s,v)=>s+v.q,0);
+          const old = D.stock.find(s=>s.prod===prod);
+          newStock.push({ prod, init: old ? old.init : total, var: vars, stock: total, vendu: (old ? old.init : total) - total });
+        }
+        D.stock = newStock;
+      }
+    } else {
+      console.log("Aucune feuille 'Stock' trouvée, conservation du stock par défaut");
+    }
+
+    // Recalculs et rafraîchissement
+    calc();
+    renderAll();
+    if(document.getElementById('page-ai-forecast').classList.contains('active')) initForecastCharts();
+    if(statusDiv) statusDiv.innerHTML = '<p style="color:var(--gn)">✅ Import réussi ! Ventes et stock mis à jour.</p>';
+    showToast('Import terminé');
+    closeModal('importModal');
+  } catch (err) {
+    console.error(err);
+    if(statusDiv) statusDiv.innerHTML = `<p style="color:var(--rd)">❌ Erreur lors de l'import : ${err.message}</p>`;
+  } finally {
+    // permet de réimporter le même fichier
+    if (event.target) event.target.value = '';
+  }
+}
+
+// ----------------------------- UI & MODALS -----------------------------
+function openModal(id) { document.getElementById(id).classList.add('active'); }
+function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+function openStockModal(prodName) {
+  const select = document.getElementById('editProduct');
+  select.innerHTML = D.stock.map(s => `<option value="${s.prod}" ${s.prod===prodName?'selected':''}>${s.prod}</option>`).join('');
+  const target = prodName || (D.stock[0] && D.stock[0].prod);
+  const item = D.stock.find(s=>s.prod===target);
+  if(item) document.getElementById('editStock').value = item.stock;
+  openModal('stockModal');
+}
+function saveStockEdit() {
+  const prod = document.getElementById('editProduct').value;
+  const newStock = parseInt(document.getElementById('editStock').value) || 0;
+  const item = D.stock.find(s=>s.prod===prod);
+  if(item) {
+    item.stock = newStock;
+    item.vendu = item.init - newStock;
+    renderAll();
+    if(document.getElementById('page-ai-forecast').classList.contains('active')) initForecastCharts();
+    closeModal('stockModal');
+    showToast('Stock mis à jour');
+  }
+}
+function filterStock(q) {
+  const rows = document.querySelectorAll('#stockTbody tr');
+  rows.forEach(r => r.style.display = r.textContent.toLowerCase().includes(q.toLowerCase()) ? '' : 'none');
+}
+function showToast(msg) {
+  const d = document.createElement('div'); d.className = 'toast'; d.textContent = msg;
+  document.body.appendChild(d); setTimeout(()=>d.remove(),3000);
+}
+function toggleAI() { document.getElementById('aiPanel').classList.toggle('open'); }
+function askAI(q) { addMsg(q,'user'); setTimeout(()=>processQuery(q),500); }
+function sendAI() { const inp = document.getElementById('aiInput'); const q = inp.value.trim(); if(!q) return; inp.value=''; addMsg(q,'user'); setTimeout(()=>processQuery(q),500); }
+function addMsg(txt,type) {
+  const chat = document.getElementById('aiChat');
+  const d = document.createElement('div');
+  d.className = `ai-msg ${type}`;
+  if(type==='bot') d.innerHTML = `<div class="ai-label">🤖</div>${txt}`;
+  else d.textContent = txt;
+  chat.appendChild(d); d.scrollIntoView(false);
+}
+function processQuery(q) {
+  const lq = q.toLowerCase();
+  let r = '';
+  if(!D.ventes.length && (lq.includes('meilleur')||lq.includes('prévois')||lq.includes('prevois'))) {
+    addMsg('Aucune donnée importée pour le moment. Importez un fichier Excel d\'abord.','bot');
+    return;
+  }
+  if(lq.includes('meilleur')) { const b = D.vendeurs.reduce((a,b)=>a.real>b.real?a:b); r = `🏆 ${b.nom} : ${f(b.real)} DA`; }
+  else if(lq.includes('prévois')||lq.includes('prevois')) {
+    const dailyTot = D.ventes.map(d=>d.reduce((a,b)=>a+b,0));
+    const { m, b0 } = (() => { const r = linReg(dailyTot); return { m: r.m, b0: r.b }; })();
+    const futureDays = futureDayNums(5);
+    const pred = futureDays.map((_,i)=>Math.max(0,Math.round(m*(dailyTot.length+i+1)+b0)));
+    r = `📈 Prévisions :<br>${pred.map((v,i)=>`${String(futureDays[i]).padStart(2,'0')}/${mm()} — ${f(v)} DA`).join('<br>')}`;
+  } else if(lq.includes('rupture')) { const rupt = D.stock.filter(s=>s.stock===0); r = `🔴 Ruptures : ${rupt.map(s=>s.prod).join(', ') || 'Aucune'}`; }
+  else if(lq.includes('recommand')) { r = '💡 Consultez l\'onglet « Recos » pour les recommandations détaillées.'; }
+  else r = 'Essayez : "meilleur vendeur", "prévois les ventes", "ruptures"';
+  addMsg(r,'bot');
+}
+function generateReport(type) {
+  const p = D.objTot ? Math.round(D.realTot/D.objTot*10000)/100 : 0;
+  let h = `<h4>Rapport ${type}</h4><p style="color:var(--t3)">${new Date().toLocaleString('fr-FR')}</p>`;
+  if(type==='weekly'||type==='full') h += `<p>Réalisation : ${f(D.realTot)} DA (${p}%). Reste : ${f(D.objTot-D.realTot)} DA.</p>`;
+  if(type==='vendor'||type==='full') h += `<p>Vendeurs : ${D.vendeurs.map(v=>v.nom+' '+f(v.real)+' DA').join(', ')}</p>`;
+  if(type==='stock'||type==='full') h += `<p>Ruptures : ${D.stock.filter(s=>s.stock===0).map(s=>s.prod).join(', ')||'Aucune'}</p>`;
+  document.getElementById('reportOutput').innerHTML = h;
+}
+function downloadReport() { exportReport(); }
+function exportReport() {
+  const out = document.getElementById('reportOutput');
+  const text = out ? out.innerText : '';
+  if (!text.trim()) { showToast('Générez d\'abord un rapport'); return; }
+  const blob = new Blob([text], {type:'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'rapport.txt';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function copyReport() { navigator.clipboard.writeText(document.getElementById('reportOutput').innerText); showToast('Copié'); }
+function switchPage(id, el) {
+  document.querySelectorAll('.page-sec').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nv-i').forEach(n=>n.classList.remove('ac'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(el) el.classList.add('ac');
+  if(window.innerWidth<768) document.getElementById('sidebar').classList.remove('open');
+  if(id==='ai-forecast') setTimeout(initForecastCharts,100);
+}
+
+// Initialisation
+document.addEventListener('DOMContentLoaded', () => {
+  renderAll();
+  const filterSelect = document.getElementById('filterVendor');
+  D.vendeurs.forEach((v,i)=> filterSelect.innerHTML += `<option value="${i}">${v.nom}</option>`);
+  document.querySelectorAll('.drop-zone').forEach(zone => {
+    zone.addEventListener('dragover', e=>{ e.preventDefault(); zone.style.borderColor='var(--ac)'; });
+    zone.addEventListener('dragleave', ()=> zone.style.borderColor='');
+    zone.addEventListener('drop', e=>{ e.preventDefault(); zone.style.borderColor=''; const file = e.dataTransfer.files[0]; if(file) handleFile({target:{files:[file]}}); });
+  });
+});
+</script>
+</body>
+</html>
